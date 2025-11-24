@@ -1,0 +1,37 @@
+# Project TODO
+
+## Database Schema
+- [x] Design and implement robot database schema with all criteria fields
+- [x] Support type-specific fields (mobile manipulator, mobile base, manipulator arm)
+- [x] Add support for dynamic/extensible criteria
+
+## Backend API
+- [x] Create tRPC procedures for robot CRUD operations
+- [x] Implement natural language query processing with LLM
+- [x] Build filter-based query system
+- [x] Create admin authentication and authorization
+
+## Frontend - User Interface
+- [x] Design and implement main search page with hybrid search
+- [x] Build natural language search input with LLM processing
+- [x] Create dropdown filter system for all criteria
+- [x] Display search results in responsive table/card layout
+- [x] Show type-specific criteria based on robot type
+- [x] Handle loading and error states
+
+## Frontend - Admin Interface
+- [x] Create admin dashboard with authentication
+- [x] Build robot add/edit forms with type-specific fields
+- [ ] Implement CSV/Excel bulk upload functionality
+- [x] Add robot deletion capability
+- [x] Create admin navigation and layout
+
+## Testing & Documentation
+- [x] Write vitest tests for backend procedures
+- [x] Test natural language query processing
+- [x] Add sample robot data for demonstration
+- [x] Document system architecture and usage
+
+## Deployment
+- [ ] Create checkpoint for deployment
+- [ ] Guide user to publish via UI

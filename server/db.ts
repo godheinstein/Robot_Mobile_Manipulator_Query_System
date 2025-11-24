@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, InsertRobot, Robot, robots } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,120 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Robot database helpers
+
+export async function createRobot(robot: InsertRobot): Promise<Robot> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db.insert(robots).values(robot);
+  const insertedId = Number(result[0].insertId);
+  
+  const inserted = await db.select().from(robots).where(eq(robots.id, insertedId)).limit(1);
+  if (!inserted[0]) {
+    throw new Error("Failed to retrieve inserted robot");
+  }
+  
+  return inserted[0];
+}
+
+export async function updateRobot(id: number, robot: Partial<InsertRobot>): Promise<Robot> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db.update(robots).set(robot).where(eq(robots.id, id));
+  
+  const updated = await db.select().from(robots).where(eq(robots.id, id)).limit(1);
+  if (!updated[0]) {
+    throw new Error("Robot not found after update");
+  }
+  
+  return updated[0];
+}
+
+export async function deleteRobot(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db.delete(robots).where(eq(robots.id, id));
+}
+
+export async function getRobotById(id: number): Promise<Robot | undefined> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db.select().from(robots).where(eq(robots.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getAllRobots(): Promise<Robot[]> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  return db.select().from(robots).orderBy(desc(robots.createdAt));
+}
+
+export interface RobotFilters {
+  type?: string;
+  minPayload?: number;
+  maxPayload?: number;
+  minReach?: number;
+  maxReach?: number;
+  rosCompatible?: boolean;
+  driveSystem?: string;
+  minArmDof?: number;
+  forceSensor?: boolean;
+}
+
+export async function searchRobots(filters: RobotFilters): Promise<Robot[]> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const conditions = [];
+
+  if (filters.type) {
+    conditions.push(eq(robots.type, filters.type as any));
+  }
+  if (filters.minPayload !== undefined) {
+    conditions.push(sql`${robots.usablePayload} >= ${filters.minPayload}`);
+  }
+  if (filters.maxPayload !== undefined) {
+    conditions.push(sql`${robots.usablePayload} <= ${filters.maxPayload}`);
+  }
+  if (filters.minReach !== undefined) {
+    conditions.push(sql`${robots.reach} >= ${filters.minReach}`);
+  }
+  if (filters.maxReach !== undefined) {
+    conditions.push(sql`${robots.reach} <= ${filters.maxReach}`);
+  }
+  if (filters.rosCompatible !== undefined) {
+    conditions.push(eq(robots.rosCompatible, filters.rosCompatible ? 1 : 0));
+  }
+  if (filters.driveSystem) {
+    conditions.push(like(robots.driveSystem, `%${filters.driveSystem}%`));
+  }
+  if (filters.minArmDof !== undefined) {
+    conditions.push(sql`${robots.armDof} >= ${filters.minArmDof}`);
+  }
+  if (filters.forceSensor !== undefined) {
+    conditions.push(eq(robots.forceSensor, filters.forceSensor ? 1 : 0));
+  }
+
+  if (conditions.length === 0) {
+    return getAllRobots();
+  }
+
+  return db.select().from(robots).where(and(...conditions)).orderBy(desc(robots.createdAt));
+}
