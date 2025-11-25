@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
-import { ArrowLeft, Plus, Edit, Trash2, Loader2, Home } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Loader2, Home, Upload, FileSpreadsheet } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 
@@ -39,6 +39,7 @@ type RobotFormData = {
   armPayload: string;
   armReach: string;
   armDof: string;
+  websiteUrl: string;
   remarks: string;
 };
 
@@ -67,6 +68,7 @@ const emptyForm: RobotFormData = {
   armPayload: "",
   armReach: "",
   armDof: "",
+  websiteUrl: "",
   remarks: "",
 };
 
@@ -75,6 +77,7 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [editingRobot, setEditingRobot] = useState<any>(null);
   const [formData, setFormData] = useState<RobotFormData>(emptyForm);
 
@@ -114,6 +117,81 @@ export default function AdminDashboard() {
       toast.error("Failed to delete robot: " + error.message);
     },
   });
+
+  const bulkUploadMutation = trpc.robots.bulkUpload.useMutation({
+    onSuccess: (result) => {
+      utils.robots.list.invalidate();
+      toast.success(`Successfully uploaded ${result.success} robot(s)`);
+      if (result.failed > 0) {
+        toast.error(`Failed to upload ${result.failed} robot(s)`);
+      }
+      setIsBulkUploadOpen(false);
+    },
+    onError: (error) => {
+      toast.error("Bulk upload failed: " + error.message);
+    },
+  });
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const XLSX = (await import("xlsx")).default;
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName!];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+          // Map CSV/Excel data to robot format
+          const robots = jsonData.map((row: any) => ({
+            name: row.name || row.Name,
+            manufacturer: row.manufacturer || row.Manufacturer || undefined,
+            type: (row.type || row.Type || "mobile_base") as "mobile_manipulator" | "mobile_base" | "manipulator_arm",
+            length: row.length || row.Length ? Number(row.length || row.Length) : undefined,
+            width: row.width || row.Width ? Number(row.width || row.Width) : undefined,
+            height: row.height || row.Height ? Number(row.height || row.Height) : undefined,
+            weight: row.weight || row.Weight ? Number(row.weight || row.Weight) : undefined,
+            usablePayload: row.usablePayload || row.UsablePayload || row.payload ? Number(row.usablePayload || row.UsablePayload || row.payload) : undefined,
+            functions: row.functions || row.Functions || undefined,
+            reach: row.reach || row.Reach ? Number(row.reach || row.Reach) : undefined,
+            driveSystem: row.driveSystem || row.DriveSystem || row.drive_system || undefined,
+            certifications: row.certifications || row.Certifications || undefined,
+            rosCompatible: row.rosCompatible || row.RosCompatible || row.ros_compatible ? 1 : 0,
+            rosDistros: row.rosDistros || row.RosDistros || row.ros_distros || undefined,
+            sdkAvailable: row.sdkAvailable || row.SdkAvailable || row.sdk_available ? 1 : 0,
+            apiAvailable: row.apiAvailable || row.ApiAvailable || row.api_available ? 1 : 0,
+            operationTime: row.operationTime || row.OperationTime || row.operation_time ? Number(row.operationTime || row.OperationTime || row.operation_time) : undefined,
+            batteryLife: row.batteryLife || row.BatteryLife || row.battery_life ? Number(row.batteryLife || row.BatteryLife || row.battery_life) : undefined,
+            maxSpeed: row.maxSpeed || row.MaxSpeed || row.max_speed ? Number(row.maxSpeed || row.MaxSpeed || row.max_speed) : undefined,
+            forceSensor: row.forceSensor || row.ForceSensor || row.force_sensor ? 1 : 0,
+            eoatCompatibility: row.eoatCompatibility || row.EoatCompatibility || row.eoat_compatibility || undefined,
+            armPayload: row.armPayload || row.ArmPayload || row.arm_payload ? Number(row.armPayload || row.ArmPayload || row.arm_payload) : undefined,
+            armReach: row.armReach || row.ArmReach || row.arm_reach ? Number(row.armReach || row.ArmReach || row.arm_reach) : undefined,
+            armDof: row.armDof || row.ArmDof || row.arm_dof ? Number(row.armDof || row.ArmDof || row.arm_dof) : undefined,
+            websiteUrl: row.websiteUrl || row.WebsiteUrl || row.website_url || row.url || undefined,
+            remarks: row.remarks || row.Remarks || undefined,
+          }));
+
+          bulkUploadMutation.mutate({ robots });
+        } catch (error) {
+          toast.error("Failed to parse file: " + (error instanceof Error ? error.message : "Unknown error"));
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    } catch (error) {
+      toast.error("Failed to read file");
+    }
+
+    // Reset input
+    event.target.value = "";
+  };
 
   if (authLoading) {
     return (
@@ -175,6 +253,7 @@ export default function AdminDashboard() {
         armPayload: robot.armPayload?.toString() || "",
         armReach: robot.armReach?.toString() || "",
         armDof: robot.armDof?.toString() || "",
+        websiteUrl: robot.websiteUrl || "",
         remarks: robot.remarks || "",
       });
     } else {
@@ -215,6 +294,7 @@ export default function AdminDashboard() {
       armPayload: formData.armPayload ? Number(formData.armPayload) : undefined,
       armReach: formData.armReach ? Number(formData.armReach) : undefined,
       armDof: formData.armDof ? Number(formData.armDof) : undefined,
+      websiteUrl: formData.websiteUrl || undefined,
       remarks: formData.remarks || undefined,
     };
 
@@ -259,13 +339,58 @@ export default function AdminDashboard() {
                 <CardTitle>Manage Robots</CardTitle>
                 <CardDescription>Add, edit, or remove robots from the database</CardDescription>
               </div>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => handleOpenDialog()}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Robot
-                  </Button>
-                </DialogTrigger>
+              <div className="flex gap-2">
+                <Dialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Bulk Upload
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Bulk Upload Robots</DialogTitle>
+                      <DialogDescription>
+                        Upload a CSV or Excel file containing robot data. The file should have columns matching the robot fields.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="file-upload">Select File</Label>
+                        <Input
+                          id="file-upload"
+                          type="file"
+                          accept=".csv,.xlsx,.xls"
+                          onChange={handleFileUpload}
+                          disabled={bulkUploadMutation.isPending}
+                        />
+                      </div>
+                      <div className="text-sm text-slate-600">
+                        <p className="font-semibold mb-2">Required columns:</p>
+                        <ul className="list-disc list-inside space-y-1">
+                          <li><code>name</code> - Robot name (required)</li>
+                          <li><code>type</code> - mobile_manipulator, mobile_base, or manipulator_arm</li>
+                          <li><code>manufacturer</code> - Manufacturer name</li>
+                          <li><code>websiteUrl</code> - Robot website URL</li>
+                        </ul>
+                        <p className="mt-2 text-xs">All other fields are optional. Column names are case-insensitive.</p>
+                      </div>
+                      {bulkUploadMutation.isPending && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Uploading robots...
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => handleOpenDialog()}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Robot
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingRobot ? "Edit Robot" : "Add New Robot"}</DialogTitle>
@@ -563,6 +688,18 @@ export default function AdminDashboard() {
                       </>
                     )}
 
+                    {/* Website URL */}
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="websiteUrl">Website URL</Label>
+                      <Input
+                        id="websiteUrl"
+                        type="url"
+                        placeholder="https://example.com/robot-page"
+                        value={formData.websiteUrl}
+                        onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
+                      />
+                    </div>
+
                     {/* Remarks */}
                     <div className="space-y-2 md:col-span-2">
                       <Label htmlFor="remarks">Remarks</Label>
@@ -591,6 +728,7 @@ export default function AdminDashboard() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent>

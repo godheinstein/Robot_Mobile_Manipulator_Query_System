@@ -149,6 +149,7 @@ export const appRouter = router({
           armPayload: z.number().optional(),
           armReach: z.number().optional(),
           armDof: z.number().optional(),
+          websiteUrl: z.string().optional(),
           remarks: z.string().optional(),
         })
       )
@@ -185,6 +186,7 @@ export const appRouter = router({
           armPayload: z.number().optional(),
           armReach: z.number().optional(),
           armDof: z.number().optional(),
+          websiteUrl: z.string().optional(),
           remarks: z.string().optional(),
         })
       )
@@ -200,6 +202,65 @@ export const appRouter = router({
         const { deleteRobot } = await import("./db");
         await deleteRobot(input.id);
         return { success: true };
+      }),
+
+    bulkUpload: protectedProcedure
+      .input(
+        z.object({
+          robots: z.array(
+            z.object({
+              name: z.string(),
+              manufacturer: z.string().optional(),
+              type: z.enum(["mobile_manipulator", "mobile_base", "manipulator_arm"]),
+              length: z.number().optional(),
+              width: z.number().optional(),
+              height: z.number().optional(),
+              weight: z.number().optional(),
+              usablePayload: z.number().optional(),
+              functions: z.string().optional(),
+              reach: z.number().optional(),
+              driveSystem: z.string().optional(),
+              certifications: z.string().optional(),
+              rosCompatible: z.number().optional(),
+              rosDistros: z.string().optional(),
+              sdkAvailable: z.number().optional(),
+              apiAvailable: z.number().optional(),
+              operationTime: z.number().optional(),
+              batteryLife: z.number().optional(),
+              maxSpeed: z.number().optional(),
+              forceSensor: z.number().optional(),
+              eoatCompatibility: z.string().optional(),
+              armPayload: z.number().optional(),
+              armReach: z.number().optional(),
+              armDof: z.number().optional(),
+              websiteUrl: z.string().optional(),
+              remarks: z.string().optional(),
+            })
+          ),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const { createRobot } = await import("./db");
+        const results = [];
+        const errors = [];
+
+        for (const robot of input.robots) {
+          try {
+            const created = await createRobot({ ...robot, createdBy: ctx.user.id });
+            results.push(created);
+          } catch (error) {
+            errors.push({
+              robot: robot.name,
+              error: error instanceof Error ? error.message : "Unknown error",
+            });
+          }
+        }
+
+        return {
+          success: results.length,
+          failed: errors.length,
+          errors,
+        };
       }),
   }),
 });

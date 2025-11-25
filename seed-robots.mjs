@@ -29,6 +29,7 @@ const sampleRobots = [
     armPayload: null,
     armReach: null,
     armDof: null,
+    websiteUrl: "https://www.mobile-industrial-robots.com/solutions/robots/mir250-hook/",
     remarks: "Ideal for logistics and warehouse automation",
   },
   {
@@ -56,6 +57,7 @@ const sampleRobots = [
     armPayload: 10,
     armReach: 1300,
     armDof: 6,
+    websiteUrl: "https://www.universal-robots.com/products/ur10-robot/",
     remarks: "Collaborative robot with built-in force/torque sensor",
   },
   {
@@ -83,6 +85,7 @@ const sampleRobots = [
     armPayload: 6,
     armReach: 800,
     armDof: 7,
+    websiteUrl: "https://fetchrobotics.com/robotics-platforms/mobile-manipulator/",
     remarks: "Integrated mobile base and arm for research and industrial use",
   },
   {
@@ -110,6 +113,7 @@ const sampleRobots = [
     armPayload: 14,
     armReach: 800,
     armDof: 7,
+    websiteUrl: "https://www.kuka.com/en-us/products/mobility/mobile-robots/kmr-iiwa",
     remarks: "Sensitive collaborative robot on mobile platform, cleanroom compatible",
   },
   {
@@ -137,6 +141,7 @@ const sampleRobots = [
     armPayload: null,
     armReach: null,
     armDof: null,
+    websiteUrl: "https://clearpathrobotics.com/turtlebot-4/",
     remarks: "Popular research and education platform with ROS 2 support",
   },
   {
@@ -164,6 +169,7 @@ const sampleRobots = [
     armPayload: 7,
     armReach: 900,
     armDof: 6,
+    websiteUrl: "https://new.abb.com/products/robotics/industrial-robots/irb-1200",
     remarks: "Compact industrial robot for small parts assembly",
   },
   {
@@ -191,6 +197,7 @@ const sampleRobots = [
     armPayload: 3,
     armReach: 855,
     armDof: 7,
+    websiteUrl: "https://www.franka.de/robot-system",
     remarks: "Research-grade collaborative robot with integrated torque sensors in all joints",
   },
   {
@@ -218,6 +225,7 @@ const sampleRobots = [
     armPayload: null,
     armReach: null,
     armDof: null,
+    websiteUrl: "https://clearpathrobotics.com/ridgeback-indoor-robot-platform/",
     remarks: "Heavy-duty omnidirectional mobile base for research and industrial applications",
   },
 ];

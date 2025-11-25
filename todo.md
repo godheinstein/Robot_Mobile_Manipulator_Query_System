@@ -33,5 +33,13 @@
 - [x] Document system architecture and usage
 
 ## Deployment
-- [ ] Create checkpoint for deployment
-- [ ] Guide user to publish via UI
+- [x] Create checkpoint for deployment
+- [x] Guide user to publish via UI
+
+## New Features (User Requested)
+- [x] Add website URL field to database schema
+- [x] Implement CSV/Excel bulk upload in admin dashboard
+- [x] Add clickable website links to robot names with good UI/UX
+- [x] Build robot comparison feature with side-by-side view
+- [x] Test all new features
+- [ ] Create checkpoint for new features

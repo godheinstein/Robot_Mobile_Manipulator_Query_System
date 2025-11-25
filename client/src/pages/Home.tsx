@@ -36,6 +36,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"nl" | "filter">("nl");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedForComparison, setSelectedForComparison] = useState<number[]>([]);
 
   // tRPC queries
   const allRobots = trpc.robots.list.useQuery();
@@ -320,12 +321,21 @@ export default function Home() {
         {/* Results Section */}
         <Card>
           <CardHeader>
-            <CardTitle>
-              {searchResults.length > 0 ? "Search Results" : "All Robots"}
-              <Badge variant="secondary" className="ml-2">
-                {displayRobots.length}
-              </Badge>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>
+                {searchResults.length > 0 ? "Search Results" : "All Robots"}
+                <Badge variant="secondary" className="ml-2">
+                  {displayRobots.length}
+                </Badge>
+              </CardTitle>
+              {selectedForComparison.length > 0 && (
+                <Link href={`/compare?ids=${selectedForComparison.join(",")}`}>
+                  <Button>
+                    Compare ({selectedForComparison.length})
+                  </Button>
+                </Link>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {allRobots.isLoading ? (
@@ -341,6 +351,20 @@ export default function Home() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <input
+                          type="checkbox"
+                          className="rounded border-slate-300"
+                          checked={selectedForComparison.length === displayRobots.length && displayRobots.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedForComparison(displayRobots.map((r: any) => r.id));
+                            } else {
+                              setSelectedForComparison([]);
+                            }
+                          }}
+                        />
+                      </TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Manufacturer</TableHead>
@@ -353,7 +377,47 @@ export default function Home() {
                   <TableBody>
                     {displayRobots.map((robot: any) => (
                       <TableRow key={robot.id}>
-                        <TableCell className="font-medium">{robot.name}</TableCell>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            className="rounded border-slate-300"
+                            checked={selectedForComparison.includes(robot.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedForComparison([...selectedForComparison, robot.id]);
+                              } else {
+                                setSelectedForComparison(selectedForComparison.filter(id => id !== robot.id));
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {robot.websiteUrl ? (
+                            <a
+                              href={robot.websiteUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 transition-colors"
+                            >
+                              {robot.name}
+                              <svg
+                                className="h-3.5 w-3.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                />
+                              </svg>
+                            </a>
+                          ) : (
+                            <span>{robot.name}</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">
                             {robot.type.replace("_", " ")}

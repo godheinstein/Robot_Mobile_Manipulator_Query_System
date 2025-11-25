@@ -80,6 +80,7 @@ export const robots = mysqlTable("robots", {
   armDof: int("arm_dof"), // Degrees of Freedom
   
   // Additional Information
+  websiteUrl: varchar("website_url", { length: 512 }),
   remarks: text("remarks"),
   
   // Metadata
