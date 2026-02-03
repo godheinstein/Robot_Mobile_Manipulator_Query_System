@@ -54,11 +54,16 @@ export const appRouter = router({
     naturalLanguageQuery: publicProcedure
       .input(z.object({ query: z.string() }))
       .mutation(async ({ input }) => {
-        const { invokeLLM } = await import("./_core/llm");
         const { searchRobots, getAllRobots } = await import("./db");
+        const { OpenAI } = await import("openai");
+
+        const openai = new OpenAI({
+          apiKey: process.env.OPENAI_API_KEY,
+        });
 
         // Use LLM to parse natural language query into structured filters
-        const response = await invokeLLM({
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
           messages: [
             {
               role: "system",

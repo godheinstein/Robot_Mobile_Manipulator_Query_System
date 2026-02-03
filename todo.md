@@ -43,3 +43,16 @@
 - [x] Build robot comparison feature with side-by-side view
 - [x] Test all new features
 - [ ] Create checkpoint for new features
+
+## Deployment Preparation
+- [x] Replace Manus OAuth with NextAuth for independent authentication
+- [x] Configure custom LLM API (OpenAI/Anthropic) to replace Manus LLM
+- [ ] Update all dependencies and remove Manus-specific packages
+- [ ] Create .env.example file with all required environment variables
+- [x] Create deployment configuration files (Railway, Vercel, Render)
+- [x] Write comprehensive deployment guides for each platform
+- [ ] Create database migration scripts for independent deployment
+- [ ] Test authentication flow with NextAuth
+- [ ] Test LLM integration with custom API
+- [ ] Push complete source code to GitHub repository
+- [ ] Create README with setup and deployment instructions
